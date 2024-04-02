@@ -15,4 +15,8 @@ abstract class BaseRepositoryImpl<T>(private val dao: BaseDao<T>) : BaseReposito
         dao.delete(entity)
     }
 
+    override suspend fun getAll(): List<T> {
+       return dao.getAll(dao.getAllQuery())
+    }
+
 }

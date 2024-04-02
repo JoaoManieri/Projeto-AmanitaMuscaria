@@ -34,12 +34,7 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Access views using binding
-        val button = binding.button // Replace with the actual button ID
-        button.setOnClickListener {
-            novaEntradaViewModel.create()
-        }
+        //acesso a view
     }
 
 

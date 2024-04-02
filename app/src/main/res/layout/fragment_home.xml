@@ -18,30 +18,146 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textInputLayout_placa"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        app:startIconDrawable="@drawable/ic_placa_carro"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintEnd_toStartOf="@+id/divider"
+        app:layout_constraintStart_toStartOf="@+id/view"
+        app:layout_constraintTop_toTopOf="parent"
         app:startIconContentDescription="Placa do carro"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:startIconDrawable="@drawable/ic_placa_carro">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/tf_placa"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:inputType="textCapCharacters"
             android:hint="@string/placa"
-            android:maxLength="8"/>
+            android:inputType="textCapCharacters"
+            android:maxLength="8"
+            android:nextFocusDown="@+id/tf_kilometragem" />
 
     </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textInputLayout_kilometragem"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintEnd_toEndOf="@+id/view"
+        app:layout_constraintStart_toEndOf="@+id/divider"
+        app:layout_constraintTop_toTopOf="parent"
+        app:startIconContentDescription="Placa do carro"
+        app:startIconDrawable="@drawable/ic_quilometrage"
+        app:suffixText="Km">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/tf_kilometragem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:hint="@string/kilometragem"
+            android:inputType="number"
+            android:maxLength="8" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+
+    <View
+        android:id="@+id/divider"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@+id/textInputLayout_kilometragem"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.45"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textInputLayout_kilometragem" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/view"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/shape_caixa_formulario"
+        app:layout_constraintEnd_toEndOf="@+id/textInputLayout_data_entrada"
+        app:layout_constraintStart_toStartOf="@+id/textInputLayout_data_entrada"
+        app:layout_constraintTop_toBottomOf="@+id/textInputLayout_placa">
+
+        <com.google.android.material.slider.RangeSlider
+            android:id="@+id/slider_combustivel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:stepSize="5"
+            android:valueFrom="0"
+            android:valueTo="100"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@+id/imageView"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:src="@drawable/ic_bomba_combustivel"
+            app:layout_constraintBottom_toBottomOf="@+id/slider_combustivel"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/slider_combustivel"
+            app:tint="@color/m3_ref_palette_neutral60" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textInputLayout_data_entrada"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+
+        android:layout_marginTop="16dp"
+        app:layout_constraintEnd_toEndOf="@+id/btn_avaria_veiculo"
+        app:layout_constraintStart_toStartOf="@+id/btn_avaria_veiculo"
+        app:layout_constraintTop_toBottomOf="@+id/view"
+        app:startIconContentDescription="Placa do carro"
+        app:startIconDrawable="@drawable/ic_calendario">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/tf_data_entrada"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:hint="@string/data_entrada"
+            android:inputType="date" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_avaria_veiculo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="@string/registrar_avaria_no_veiculo"
+        android:textColor="@android:color/white"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_camera"
+        app:iconGravity="textStart"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textInputLayout_data_entrada" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

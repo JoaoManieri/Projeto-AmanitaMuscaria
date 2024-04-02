@@ -6,4 +6,7 @@
     <string name="nova_entrada">Nova entrada</string>
     <string name="entradas_anteriores">Entradas</string>
     <string name="placa">Placa</string>
+    <string name="kilometragem">Quilometragem</string>
+    <string name="data_entrada">Data de entrada</string>
+    <string name="registrar_avaria_no_veiculo">Registrar avaria no veículo</string>
 </resources>

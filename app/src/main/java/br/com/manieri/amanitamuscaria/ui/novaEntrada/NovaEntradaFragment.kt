@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import br.com.manieri.amanitamuscaria.databinding.FragmentHomeBinding
+import br.com.manieri.amanitamuscaria.util.filtros.PlacaVeiculoTextWatcher
 import org.koin.core.component.KoinComponent
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -35,6 +36,7 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         //acesso a view
+        binding.tfPlaca.addTextChangedListener(PlacaVeiculoTextWatcher())
     }
 
 

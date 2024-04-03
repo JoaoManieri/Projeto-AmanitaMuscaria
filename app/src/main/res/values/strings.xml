@@ -9,4 +9,6 @@
     <string name="kilometragem">Quilometragem</string>
     <string name="data_entrada">Data de entrada</string>
     <string name="registrar_avaria_no_veiculo">Registrar avaria no veículo</string>
+    <string name="fechar">Fechar\n</string>
+    <string name="detalhes_avaria">Detalhes da avaria</string>
 </resources>

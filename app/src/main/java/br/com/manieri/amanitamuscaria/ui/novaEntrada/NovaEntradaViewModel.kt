@@ -4,8 +4,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import br.com.manieri.amanitamuscaria.database.repository.CarroRepository
+import br.com.manieri.amanitamuscaria.image.ImageManager
 
-class NovaEntradaViewModel(private val carroRepository: CarroRepository) : ViewModel() {
+class NovaEntradaViewModel(private val carroRepository: CarroRepository, private val imageManager: ImageManager) : ViewModel() {
 //    fun create() {
 //        viewModelScope.launch {
 //            carroRepository.insert(Carro(1, "Saveiro"))
@@ -13,8 +14,7 @@ class NovaEntradaViewModel(private val carroRepository: CarroRepository) : ViewM
 //        }
 //    }
 
-    private val _text = MutableLiveData<String>().apply {
-        value = "This is home Fragment"
-    }
-    val text: LiveData<String> = _text
+    fun getImages() = imageManager.getImages(arrayListOf())
+
+
 }

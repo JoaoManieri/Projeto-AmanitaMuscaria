@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
     <application
         android:name=".AmanitaMuscariaApplication"
         android:allowBackup="true"
@@ -26,7 +32,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="seu.package.fileprovider"
+            android:authorities="br.com.manieri.amanitamuscaria.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

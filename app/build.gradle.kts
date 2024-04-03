@@ -65,5 +65,10 @@ dependencies {
     // material ui
     implementation (libs.material)
 
+    //complementos imagem
+    implementation (libs.glide)
+    annotationProcessor (libs.compiler)
+
+
 
 }

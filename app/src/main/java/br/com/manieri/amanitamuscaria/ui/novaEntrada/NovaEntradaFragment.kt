@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import br.com.manieri.amanitamuscaria.databinding.FragmentHomeBinding
 import br.com.manieri.amanitamuscaria.util.filtros.DataTextWatcher
@@ -19,10 +18,8 @@ import android.content.Intent
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import br.com.manieri.amanitamuscaria.image.CameraManager
-import br.com.manieri.amanitamuscaria.image.ImageManager
-import br.com.manieri.amanitamuscaria.ui.novaEntrada.adapter.PhotoAdapter
-import org.koin.core.component.inject
-import java.io.File
+import br.com.manieri.amanitamuscaria.model.Avaria
+import br.com.manieri.amanitamuscaria.ui.novaEntrada.adapter.FotoAdapter
 import java.util.Date
 
 class NovaEntradaFragment : Fragment(), KoinComponent {
@@ -34,7 +31,7 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
     private val novaEntradaViewModel: NovaEntradaViewModel by viewModel()
     private val binding get() = _binding!!
 
-    private lateinit var adapter : PhotoAdapter
+    private lateinit var adapter : FotoAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -69,8 +66,8 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
         val layoutManager = LinearLayoutManager(requireContext())
         recyclerView.layoutManager = layoutManager
 
-        val photos: ArrayList<File> = novaEntradaViewModel.getImages()
-        adapter = PhotoAdapter(photos)
+        val photos: ArrayList<Avaria> = novaEntradaViewModel.getImages()
+        adapter = FotoAdapter(photos)
         recyclerView.adapter = adapter
     }
 

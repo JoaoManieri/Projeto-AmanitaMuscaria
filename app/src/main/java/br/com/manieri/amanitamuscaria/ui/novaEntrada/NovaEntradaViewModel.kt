@@ -1,11 +1,9 @@
 package br.com.manieri.amanitamuscaria.ui.novaEntrada
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import br.com.manieri.amanitamuscaria.database.repository.CarroRepository
 import br.com.manieri.amanitamuscaria.image.ImageManager
-import java.io.File
+import br.com.manieri.amanitamuscaria.model.Avaria
 
 class NovaEntradaViewModel(private val carroRepository: CarroRepository, private val imageManager: ImageManager) : ViewModel() {
 //    fun create() {
@@ -15,7 +13,7 @@ class NovaEntradaViewModel(private val carroRepository: CarroRepository, private
 //        }
 //    }
 
-    fun getImages() = imageManager.getImages(arrayListOf())
+    fun getImages() : ArrayList<Avaria> = imageManager.getImages(arrayListOf())
 
 
 }

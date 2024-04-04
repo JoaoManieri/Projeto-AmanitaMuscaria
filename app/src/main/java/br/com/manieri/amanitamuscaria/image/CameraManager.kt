@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import java.io.File
@@ -13,7 +12,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import android.app.Activity.RESULT_OK
 import androidx.activity.result.ActivityResultLauncher
-import br.com.manieri.amanitamuscaria.ui.novaEntrada.adapter.PhotoAdapter
+import br.com.manieri.amanitamuscaria.model.factory.AvariaFactory
+import br.com.manieri.amanitamuscaria.ui.novaEntrada.adapter.FotoAdapter
 
 
 class CameraManager(private val fragment: Fragment) {
@@ -57,9 +57,9 @@ class CameraManager(private val fragment: Fragment) {
         }
     }
 
-    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?, adapter: PhotoAdapter) {
+    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?, adapter: FotoAdapter) {
         if (requestCode == REQUEST_TAKE_PHOTO && resultCode == RESULT_OK) {
-            adapter.updatePhotos(File(currentPhotoPath))
+            adapter.updatePhotos(AvariaFactory.create("Descrição", currentPhotoPath))
         }
     }
 }

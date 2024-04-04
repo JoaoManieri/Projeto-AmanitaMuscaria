@@ -12,13 +12,16 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import android.app.Activity.RESULT_OK
-
+import androidx.activity.result.ActivityResultLauncher
+import br.com.manieri.amanitamuscaria.ui.novaEntrada.adapter.PhotoAdapter
 
 
 class CameraManager(private val fragment: Fragment) {
 
     private val REQUEST_TAKE_PHOTO = 1
     private var currentPhotoPath: String = ""
+
+    private lateinit var resultLauncher: ActivityResultLauncher<Intent>
 
     fun dispatchTakePictureIntent() {
         Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
@@ -51,14 +54,12 @@ class CameraManager(private val fragment: Fragment) {
             storageDir /* directory */
         ).apply {
             currentPhotoPath = absolutePath
-            Log.d("CameraFragment", "Caminho da foto: $currentPhotoPath")
         }
     }
 
-    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?, adapter: PhotoAdapter) {
         if (requestCode == REQUEST_TAKE_PHOTO && resultCode == RESULT_OK) {
-            Log.w("CameraFragment", "onActivityResult: $data", )
-            // A foto foi tirada e salva no caminho especificado em currentPhotoPath
+            adapter.updatePhotos(File(currentPhotoPath))
         }
     }
 }

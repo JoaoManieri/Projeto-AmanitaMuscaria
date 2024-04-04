@@ -34,6 +34,8 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
     private val novaEntradaViewModel: NovaEntradaViewModel by viewModel()
     private val binding get() = _binding!!
 
+    private lateinit var adapter : PhotoAdapter
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -67,15 +69,15 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
         val layoutManager = LinearLayoutManager(requireContext())
         recyclerView.layoutManager = layoutManager
 
-        val photos: Array<File> = novaEntradaViewModel.getImages()
-        val adapter = PhotoAdapter(photos)
+        val photos: ArrayList<File> = novaEntradaViewModel.getImages()
+        adapter = PhotoAdapter(photos)
         recyclerView.adapter = adapter
     }
 
-    @Deprecated("Deprecated in Java")
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        cameraManager.onActivityResult(requestCode, resultCode, data)
+        cameraManager.onActivityResult(requestCode, resultCode, data, adapter)
     }
 
 

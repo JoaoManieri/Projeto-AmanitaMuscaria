@@ -6,7 +6,7 @@ import java.io.File
 
 class ImageManager {
 
-    fun getImages(photoNames : ArrayList<Fotos>): Array<File> {
+    fun getImages(photoNames : ArrayList<Fotos>): ArrayList<File> {
 
         val directory = File("/storage/emulated/0/Android/data/br.com.manieri.amanitamuscaria/files/Pictures/")
         val photos: Array<File> = directory.listFiles { file -> file.isFile } ?: arrayOf()
@@ -19,6 +19,6 @@ class ImageManager {
 //                photos.add(file)
 //            }
 //        }
-        return photos
+        return ArrayList(photos.asList())
     }
 }

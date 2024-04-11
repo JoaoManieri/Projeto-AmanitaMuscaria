@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.RecyclerView
 import br.com.manieri.amanitamuscaria.R
 import br.com.manieri.amanitamuscaria.model.Avaria
 import br.com.manieri.amanitamuscaria.ui.novaEntrada.dialogs.DialogAvaria
-
 import com.bumptech.glide.Glide
 
 class FotoAdapter(private val avarias: ArrayList<Avaria>) :

@@ -7,9 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import br.com.manieri.amanitamuscaria.databinding.FragmentHomeBinding
-import br.com.manieri.amanitamuscaria.util.filtros.DataTextWatcher
-import br.com.manieri.amanitamuscaria.util.filtros.PercentLabelFormatter
-import br.com.manieri.amanitamuscaria.util.filtros.PlacaVeiculoTextWatcher
+import br.com.manieri.amanitamuscaria.util.formatadoresTxt.DataTextWatcher
+import br.com.manieri.amanitamuscaria.util.formatadoresTxt.PercentLabelFormatter
+import br.com.manieri.amanitamuscaria.util.formatadoresTxt.PlacaVeiculoTextWatcher
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.component.KoinComponent
 import java.text.SimpleDateFormat

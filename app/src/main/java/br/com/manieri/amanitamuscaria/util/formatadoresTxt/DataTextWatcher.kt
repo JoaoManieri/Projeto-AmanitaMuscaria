@@ -1,4 +1,4 @@
-package br.com.manieri.amanitamuscaria.util.filtros
+package br.com.manieri.amanitamuscaria.util.formatadoresTxt
 
 import android.text.Editable
 import android.text.TextWatcher

@@ -11,4 +11,6 @@
     <string name="registrar_avaria_no_veiculo">Registrar avaria no veículo</string>
     <string name="fechar">Fechar\n</string>
     <string name="detalhes_avaria">Detalhes da avaria</string>
+    <string name="inspeco_de_avaria">Inspeção de avaria</string>
+    <string name="foto_avaria">Foto avaria</string>
 </resources>

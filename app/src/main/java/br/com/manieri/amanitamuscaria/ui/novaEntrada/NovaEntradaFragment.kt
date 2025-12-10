@@ -15,6 +15,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
+import br.com.manieri.amanitamuscaria.BuildConfig
 
 import br.com.manieri.amanitamuscaria.error.ErrorAction
 import br.com.manieri.amanitamuscaria.error.ErrorHandler
@@ -76,8 +78,8 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 viewModel.events.collect { event ->
-                    when (event) {
-                        UiEvent.Saved -> findNavController().navigateUp()
+                    when (event) { 
+                        is UiEvent.Saved -> Snackbar.make(requireView(), event.message, Snackbar.LENGTH_LONG).show()
                     }
                 }
             }
@@ -98,7 +100,7 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
         )
         return FileProvider.getUriForFile(
             requireContext(),
-            "br.com.manieri.amanitamuscaria.fileprovider",
+            "${BuildConfig.APPLICATION_ID}.fileprovider",
             file
         )
     }

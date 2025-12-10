@@ -79,7 +79,8 @@ class NovaEntradaViewModel(
             _state.update { it.copy(isSaving = true) }
             try {
                 saveVehicleEntryUseCase(entry)
-                _events.tryEmit(UiEvent.Saved)
+                _events.tryEmit(UiEvent.Saved("Entrada registrada com sucesso."))
+                _state.value = VehicleFormState()
             } catch (e: Exception) {
                 errorHandler.handle(e, "Não foi possível salvar a entrada do veículo.")
             } finally {
@@ -107,5 +108,5 @@ class NovaEntradaViewModel(
 }
 
 sealed class UiEvent {
-    data object Saved : UiEvent()
+    data class Saved(val message: String) : UiEvent()
 }

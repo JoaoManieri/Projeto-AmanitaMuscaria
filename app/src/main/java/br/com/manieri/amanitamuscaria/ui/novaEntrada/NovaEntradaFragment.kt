@@ -16,7 +16,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
-import br.com.manieri.amanitamuscaria.BuildConfig
 
 import br.com.manieri.amanitamuscaria.error.ErrorAction
 import br.com.manieri.amanitamuscaria.error.ErrorHandler
@@ -100,7 +99,7 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
         )
         return FileProvider.getUriForFile(
             requireContext(),
-            "${BuildConfig.APPLICATION_ID}.fileprovider",
+            "${requireContext().packageName}.fileprovider",
             file
         )
     }

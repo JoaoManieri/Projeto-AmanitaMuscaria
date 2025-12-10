@@ -22,4 +22,13 @@
         android:name="br.com.manieri.amanitamuscaria.ui.notifications.NotificationsFragment"
         android:label="@string/title_notifications"
         tools:layout="@layout/fragment_notifications" />
+
+    <fragment
+        android:id="@+id/navigation_vehicle_detail"
+        android:name="br.com.manieri.amanitamuscaria.ui.historico.VehicleEntryDetailFragment"
+        android:label="Detalhe Entrada">
+        <argument
+            android:name="entryId"
+            app:argType="string" />
+    </fragment>
 </navigation>

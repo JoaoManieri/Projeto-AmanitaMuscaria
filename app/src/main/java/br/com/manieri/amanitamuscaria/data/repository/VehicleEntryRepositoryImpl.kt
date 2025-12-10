@@ -15,6 +15,10 @@ class VehicleEntryRepositoryImpl(
     }
 
     override suspend fun getAll(): List<VehicleEntry> = vehicleEntryDao.getAll().map { it.toDomain() }
+
+    override suspend fun delete(id: String) {
+        vehicleEntryDao.deleteById(id)
+    }
 }
 
 private fun VehicleEntry.toEntity() = VehicleEntryEntity(

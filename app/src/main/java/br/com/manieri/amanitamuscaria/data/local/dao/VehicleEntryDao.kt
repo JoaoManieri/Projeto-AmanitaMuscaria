@@ -13,4 +13,7 @@ interface VehicleEntryDao {
 
     @Query("SELECT * FROM vehicle_entries ORDER BY createdAt DESC")
     suspend fun getAll(): List<VehicleEntryEntity>
+
+    @Query("DELETE FROM vehicle_entries WHERE id = :id")
+    suspend fun deleteById(id: String)
 }

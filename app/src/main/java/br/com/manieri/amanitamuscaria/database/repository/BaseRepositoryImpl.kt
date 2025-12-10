@@ -2,7 +2,7 @@ package br.com.manieri.amanitamuscaria.database.repository
 
 import br.com.manieri.amanitamuscaria.database.dao.BaseDao
 
-abstract class BaseRepositoryImpl<T>(private val dao: BaseDao<T>) : BaseRepository<T> {
+abstract class BaseRepositoryImpl<T, D : BaseDao<T>>(protected val dao: D) : BaseRepository<T> {
     override suspend fun insert(entity: T) {
         dao.insert(entity)
     }
@@ -14,9 +14,4 @@ abstract class BaseRepositoryImpl<T>(private val dao: BaseDao<T>) : BaseReposito
     override suspend fun delete(entity: T) {
         dao.delete(entity)
     }
-
-    override suspend fun getAll(): List<T> {
-       return dao.getAll(dao.getAllQuery())
-    }
-
 }

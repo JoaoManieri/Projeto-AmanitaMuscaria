@@ -4,6 +4,7 @@ import android.app.Application
 import br.com.manieri.amanitamuscaria.di.dataBaseModule
 import br.com.manieri.amanitamuscaria.di.errorModule
 import br.com.manieri.amanitamuscaria.di.uiModule
+import br.com.manieri.amanitamuscaria.di.vehicleEntryModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext.startKoin
 
@@ -12,7 +13,7 @@ class AmanitaMuscariaApplication : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@AmanitaMuscariaApplication)
-            modules(dataBaseModule, uiModule, errorModule)
+            modules(dataBaseModule, uiModule, errorModule, vehicleEntryModule)
         }
     }
 }

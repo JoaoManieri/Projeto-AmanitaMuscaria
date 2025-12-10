@@ -1,6 +1,6 @@
 package br.com.manieri.amanitamuscaria.database.repository
 
-import br.com.manieri.amanitamuscaria.database.AppDatabase
+import br.com.manieri.amanitamuscaria.data.local.database.AppDatabase
 import br.com.manieri.amanitamuscaria.database.dao.CarroDao
 import br.com.manieri.amanitamuscaria.model.Carro
 

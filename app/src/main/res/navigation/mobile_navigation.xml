@@ -25,7 +25,7 @@
 
     <fragment
         android:id="@+id/navigation_vehicle_detail"
-        android:name="br.com.manieri.amanitamuscaria.ui.historico.VehicleEntryDetailFragment"
+        android:name="br.com.manieri.amanitamuscaria.ui.detalhesEntrada.DetalhesEntradaFragment"
         android:label="Detalhe Entrada">
         <argument
             android:name="entryId"

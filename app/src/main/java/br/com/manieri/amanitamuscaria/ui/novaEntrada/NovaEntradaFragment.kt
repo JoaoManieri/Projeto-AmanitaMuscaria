@@ -12,11 +12,11 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
-
 import br.com.manieri.amanitamuscaria.error.ErrorAction
 import br.com.manieri.amanitamuscaria.error.ErrorHandler
 import br.com.manieri.amanitamuscaria.error.ErrorResult
@@ -25,11 +25,10 @@ import br.com.manieri.amanitamuscaria.ui.theme.AmanitaTheme
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import org.koin.core.component.KoinComponent
 import java.io.File
 import java.time.Instant
 
-class NovaEntradaFragment : Fragment(), KoinComponent {
+class NovaEntradaFragment : Fragment() {
 
     private val viewModel: NovaEntradaViewModel by viewModel()
     private val errorHandler: ErrorHandler by inject()
@@ -51,12 +50,8 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+    ): View =
+        ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 AmanitaTheme {
@@ -65,47 +60,58 @@ class NovaEntradaFragment : Fragment(), KoinComponent {
                         state = state,
                         onFieldChange = viewModel::onFieldChange,
                         onSaveClick = viewModel::save,
-                        onAddPhotoClick = { launchCamera() },
+                        onAddPhotoClick = ::launchCamera,
                         onRemovePhoto = viewModel::removePhoto
                     )
                 }
             }
         }
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        errorUIController = ErrorUIController(errorHandler)
-        errorUIController.observeErrors(viewLifecycleOwner, view) { handleErrorAction(it) }
+        errorUIController = ErrorUIController(errorHandler).also {
+            it.observeErrors(viewLifecycleOwner, view, ::handleErrorAction)
+        }
+        collectEvents()
+    }
 
+    private fun collectEvents() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
-                viewModel.events.collect { event ->
-                    when (event) { 
-                        is UiEvent.Saved -> Snackbar.make(requireView(), event.message, Snackbar.LENGTH_LONG).show()
-                    }
-                }
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.events.collect(::handleUiEvent)
             }
         }
     }
 
     private fun launchCamera() {
-        val uri = createImageUri() ?: return
-        pendingPhotoUri = uri
-        takePictureLauncher.launch(uri)
+        pendingPhotoUri = createImageUri() ?: run {
+            Snackbar
+                .make(requireView(), "Não foi possível abrir a câmera.", Snackbar.LENGTH_LONG)
+                .show()
+            return
+        }
+        takePictureLauncher.launch(pendingPhotoUri)
     }
 
-    private fun createImageUri(): Uri? {
-        val file = File.createTempFile(
-            "vehicle_entry_${Instant.now().toEpochMilli()}",
-            ".jpg",
-            requireContext().cacheDir
-        )
-        return FileProvider.getUriForFile(
-            requireContext(),
-            "${requireContext().packageName}.fileprovider",
-            file
-        )
+    private fun createImageUri(): Uri? =
+        runCatching {
+            val directory = File(requireContext().cacheDir, "entries").apply { mkdirs() }
+            val file = File.createTempFile(
+                "vehicle_entry_${Instant.now().toEpochMilli()}",
+                ".jpg",
+                directory
+            )
+            FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.fileprovider",
+                file
+            )
+        }.getOrNull()
+
+    private fun handleUiEvent(event: UiEvent) {
+        when (event) {
+            is UiEvent.Saved -> Snackbar.make(requireView(), event.message, Snackbar.LENGTH_LONG).show()
+        }
     }
 
     private fun handleErrorAction(errorResult: ErrorResult) {

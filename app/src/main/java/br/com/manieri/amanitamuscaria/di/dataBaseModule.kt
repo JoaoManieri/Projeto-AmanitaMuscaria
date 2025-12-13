@@ -20,6 +20,7 @@ val dataBaseModule = module {
 
     single { get<AppDatabase>().carroDao() }
     single { get<AppDatabase>().vehicleEntryDao() }
+    single { get<AppDatabase>().companySettingsDao() }
 
     single { CarroRepository(get<AppDatabase>()) }
 }

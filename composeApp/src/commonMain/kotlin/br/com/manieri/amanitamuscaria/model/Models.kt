@@ -1,5 +1,8 @@
 package br.com.manieri.amanitamuscaria.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Vehicle(
     val plate: String,
     val brand: String,
@@ -9,6 +12,7 @@ data class Vehicle(
     val mileage: Int,
 )
 
+@Serializable
 data class Client(
     val name: String,
     val phone: String,
@@ -16,6 +20,7 @@ data class Client(
     val document: String? = null,
 )
 
+@Serializable
 data class InspectionPhoto(
     val id: String,
     val region: String,
@@ -24,12 +29,14 @@ data class InspectionPhoto(
     val bytes: ByteArray? = null,
 )
 
+@Serializable
 enum class ServiceStatus {
     IN_PROGRESS,
     WAITING_PICKUP,
     COMPLETED,
 }
 
+@Serializable
 data class Service(
     val id: String,
     val plate: String,
@@ -43,6 +50,7 @@ data class Service(
     val signature: String? = null,
 )
 
+@Serializable
 data class WorkshopSettings(
     val workshopName: String,
     val workshopLogo: String? = null,

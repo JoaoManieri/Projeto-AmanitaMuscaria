@@ -7,30 +7,53 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import br.com.manieri.amanitamuscaria.model.Client
 import br.com.manieri.amanitamuscaria.model.Service
 import br.com.manieri.amanitamuscaria.model.ServiceStatus
-import br.com.manieri.amanitamuscaria.model.Vehicle
 import br.com.manieri.amanitamuscaria.model.WorkshopSettings
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+private const val STATE_SCHEMA_VERSION = 1
+
+@Serializable
+private data class PersistedAppState(
+    val version: Int = STATE_SCHEMA_VERSION,
+    val services: List<Service> = emptyList(),
+    val selectedServiceId: String? = null,
+    val settings: WorkshopSettings = defaultSettings(),
+)
 
 @Stable
 class AutoCheckAppState(
-    initialServices: List<Service>,
+    private val storage: LocalStateStorage,
 ) {
-    val services = mutableStateListOf<Service>().apply {
-        addAll(initialServices)
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
     }
 
-    var selectedServiceId: String? by mutableStateOf(initialServices.firstOrNull()?.id)
+    val services = mutableStateListOf<Service>()
+    var selectedServiceId: String? by mutableStateOf(null)
     var settings: WorkshopSettings by mutableStateOf(defaultSettings())
+
+    init {
+        val restoredState = loadPersistedState()
+        services.addAll(restoredState?.services ?: emptyList())
+        selectedServiceId = sanitizeSelectedServiceId(restoredState?.selectedServiceId)
+        settings = restoredState?.settings ?: defaultSettings()
+    }
 
     fun addService(service: Service) {
         services.add(0, service)
         selectedServiceId = service.id
+        persistState()
     }
 
     fun selectService(id: String?) {
-        selectedServiceId = id
+        selectedServiceId = sanitizeSelectedServiceId(id)
+        persistState()
     }
 
     fun completeService(id: String) {
@@ -41,83 +64,47 @@ class AutoCheckAppState(
                 status = ServiceStatus.COMPLETED,
                 exitDateLabel = "Hoje",
             )
+            persistState()
         }
     }
 
     fun updateSettings(transform: (WorkshopSettings) -> WorkshopSettings) {
         settings = transform(settings)
+        persistState()
+    }
+
+    private fun sanitizeSelectedServiceId(selectedId: String?): String? {
+        if (selectedId == null) return services.firstOrNull()?.id
+        return selectedId.takeIf { id -> services.any { it.id == id } } ?: services.firstOrNull()?.id
+    }
+
+    private fun loadPersistedState(): PersistedAppState? {
+        val raw = storage.loadState() ?: return null
+        return runCatching {
+            json.decodeFromString<PersistedAppState>(raw)
+        }.getOrNull()
+    }
+
+    private fun persistState() {
+        val snapshot = PersistedAppState(
+            services = services.toList(),
+            selectedServiceId = selectedServiceId,
+            settings = settings,
+        )
+        val encoded = runCatching {
+            json.encodeToString(snapshot)
+        }.getOrNull() ?: return
+        storage.saveState(encoded)
     }
 }
 
 @Composable
 fun rememberAutoCheckAppState(): AutoCheckAppState {
-    return remember {
-        AutoCheckAppState(initialServices = sampleServices())
+    val storage = rememberLocalStateStorage()
+    return remember(storage) {
+        AutoCheckAppState(storage = storage)
     }
 }
-
-private fun sampleServices(): List<Service> = listOf(
-    Service(
-        id = "1",
-        plate = "ABC-1234",
-        vehicle = Vehicle(
-            plate = "ABC-1234",
-            brand = "Toyota",
-            model = "Corolla",
-            year = 2020,
-            color = "Prata",
-            mileage = 45000,
-        ),
-        client = Client(
-            name = "Joao Silva",
-            phone = "(11) 98765-4321",
-            email = "joao.silva@email.com",
-        ),
-        status = ServiceStatus.IN_PROGRESS,
-        entryDateLabel = "15/01/2024 as 09:00",
-        observations = "Troca de oleo e revisao dos 40.000km. Verificar freios dianteiros.",
-    ),
-    Service(
-        id = "2",
-        plate = "DEF-5678",
-        vehicle = Vehicle(
-            plate = "DEF-5678",
-            brand = "Honda",
-            model = "Civic",
-            year = 2022,
-            color = "Preto",
-            mileage = 15000,
-        ),
-        client = Client(
-            name = "Maria Santos",
-            phone = "(11) 91234-5678",
-            email = "maria.santos@email.com",
-        ),
-        status = ServiceStatus.WAITING_PICKUP,
-        entryDateLabel = "14/01/2024 as 14:30",
-        observations = "Alinhamento e balanceamento. Verificar suspensao.",
-    ),
-    Service(
-        id = "3",
-        plate = "GHI-9012",
-        vehicle = Vehicle(
-            plate = "GHI-9012",
-            brand = "Volkswagen",
-            model = "Golf",
-            year = 2019,
-            color = "Branco",
-            mileage = 62000,
-        ),
-        client = Client(
-            name = "Pedro Oliveira",
-            phone = "(11) 94567-8901",
-        ),
-        status = ServiceStatus.COMPLETED,
-        entryDateLabel = "10/01/2024 as 10:00",
-        exitDateLabel = "12/01/2024 as 16:00",
-        observations = "Reparo no sistema de ar condicionado.",
-    ),
-)
 
 private fun defaultSettings(): WorkshopSettings = WorkshopSettings(
     workshopName = "Oficina AutoCheck Pro",

@@ -9,12 +9,16 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,10 +40,12 @@ fun App() {
         var activeScreen by rememberSaveable { mutableStateOf(AppScreen.DASHBOARD) }
         val appState = rememberAutoCheckAppState()
         val tokens = LocalAutoCheckTokens.current
+        val tabStateHolder = rememberSaveableStateHolder()
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
                 .background(tokens.canvasBackground),
             contentAlignment = Alignment.TopStart,
         ) {
@@ -66,20 +72,22 @@ fun App() {
                     },
                     label = "page-transition",
                 ) { screen ->
-                    when (screen) {
-                        AppScreen.DASHBOARD -> DashboardScreen(
-                            services = appState.services,
-                            selectedServiceId = appState.selectedServiceId,
-                            onSelectService = appState::selectService,
-                            onAddService = appState::addService,
-                            onCompleteService = appState::completeService,
-                        )
+                    tabStateHolder.SaveableStateProvider(key = screen.route) {
+                        when (screen) {
+                            AppScreen.DASHBOARD -> DashboardScreen(
+                                services = appState.services,
+                                selectedServiceId = appState.selectedServiceId,
+                                onSelectService = appState::selectService,
+                                onAddService = appState::addService,
+                                onCompleteService = appState::completeService,
+                            )
 
-                        AppScreen.HISTORY -> HistoryScreen(services = appState.services)
-                        AppScreen.SETTINGS -> SettingsScreen(
-                            settings = appState.settings,
-                            onUpdateSettings = { updated -> appState.updateSettings { updated } },
-                        )
+                            AppScreen.HISTORY -> HistoryScreen(services = appState.services)
+                            AppScreen.SETTINGS -> SettingsScreen(
+                                settings = appState.settings,
+                                onUpdateSettings = { updated -> appState.updateSettings { updated } },
+                            )
+                        }
                     }
                 }
             }

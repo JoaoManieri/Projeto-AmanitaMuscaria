@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -51,9 +53,12 @@ import org.jetbrains.compose.resources.painterResource
 import amanitamuscaria.composeapp.generated.resources.Res
 import amanitamuscaria.composeapp.generated.resources.car_diagram
 import br.com.manieri.amanitamuscaria.model.Client
+import br.com.manieri.amanitamuscaria.model.InspectionPhoto
 import br.com.manieri.amanitamuscaria.model.Service
 import br.com.manieri.amanitamuscaria.model.ServiceStatus
 import br.com.manieri.amanitamuscaria.model.Vehicle
+import br.com.manieri.amanitamuscaria.platform.rememberPlatformCameraCapture
+import br.com.manieri.amanitamuscaria.platform.PlatformPhotoPreview
 import br.com.manieri.amanitamuscaria.ui.theme.LocalAutoCheckTokens
 import kotlin.random.Random
 
@@ -78,15 +83,35 @@ fun CheckinWizardScreen(
     var document by remember { mutableStateOf("") }
 
     var observations by remember { mutableStateOf("") }
-    val completedRegions = remember { mutableStateListOf<String>() }
+    val inspectionPhotos = remember { mutableStateListOf<InspectionPhoto>() }
+    var pendingRegion by remember { mutableStateOf<String?>(null) }
     val signatureStrokes = remember { mutableStateListOf<List<androidx.compose.ui.geometry.Offset>>() }
     var currentStroke by remember { mutableStateOf<List<androidx.compose.ui.geometry.Offset>>(emptyList()) }
 
+    val launchCamera = rememberPlatformCameraCapture(
+        onImageCaptured = {
+            val region = pendingRegion ?: return@rememberPlatformCameraCapture
+            inspectionPhotos.add(
+                InspectionPhoto(
+                    id = Random.nextInt(100000, 999999).toString(),
+                    region = region,
+                    url = "captured://$region/${inspectionPhotos.size + 1}",
+                    timestampLabel = "Agora",
+                    bytes = it,
+                ),
+            )
+            pendingRegion = null
+        },
+        onCaptureCancelled = {
+            pendingRegion = null
+        },
+    )
+
     val canProceed = when (step) {
-        1 -> listOf(plate, brand, model, year, color, mileage).all { it.isNotBlank() }
-        2 -> listOf(clientName, phone).all { it.isNotBlank() }
+        1 -> true
+        2 -> true
         3 -> true
-        else -> signatureStrokes.isNotEmpty() || currentStroke.size > 1
+        else -> true
     }
 
     Column(
@@ -127,22 +152,22 @@ fun CheckinWizardScreen(
             ) {
                 when (step) {
                     1 -> {
-                        Field("Placa *", plate) { plate = it.uppercase() }
+                        Field("Placa", plate) { plate = it.uppercase() }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Field("Marca *", brand, Modifier.weight(1f)) { brand = it }
-                            Field("Modelo *", model, Modifier.weight(1f)) { model = it }
+                            Field("Marca", brand, Modifier.weight(1f)) { brand = it }
+                            Field("Modelo", model, Modifier.weight(1f)) { model = it }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Field("Ano *", year, Modifier.weight(1f)) { year = it }
-                            Field("Cor *", color, Modifier.weight(1f)) { color = it }
-                            Field("Quilometragem *", mileage, Modifier.weight(1f)) { mileage = it }
+                            Field("Ano", year, Modifier.weight(1f)) { year = it }
+                            Field("Cor", color, Modifier.weight(1f)) { color = it }
+                            Field("Quilometragem", mileage, Modifier.weight(1f)) { mileage = it }
                         }
                     }
 
                     2 -> {
-                        Field("Nome completo *", clientName) { clientName = it }
+                        Field("Nome completo", clientName) { clientName = it }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Field("Telefone *", phone, Modifier.weight(1f)) { phone = it }
+                            Field("Telefone", phone, Modifier.weight(1f)) { phone = it }
                             Field("Documento", document, Modifier.weight(1f)) { document = it }
                         }
                         Field("Email", email) { email = it }
@@ -155,13 +180,16 @@ fun CheckinWizardScreen(
                             fontWeight = FontWeight.SemiBold,
                         )
                         InspectionRegions(
-                            completedRegions = completedRegions,
-                            onToggleRegion = { region ->
-                                if (completedRegions.contains(region)) {
-                                    completedRegions.remove(region)
-                                } else {
-                                    completedRegions.add(region)
-                                }
+                            photos = inspectionPhotos,
+                            onRegionClick = { region ->
+                                pendingRegion = region
+                                launchCamera()
+                            },
+                        )
+                        PhotoGrid(
+                            photos = inspectionPhotos,
+                            onRemovePhoto = { photoId ->
+                                inspectionPhotos.removeAll { it.id == photoId }
                             },
                         )
                         OutlinedTextField(
@@ -242,7 +270,8 @@ fun CheckinWizardScreen(
                             status = ServiceStatus.IN_PROGRESS,
                             entryDateLabel = "Agora",
                             observations = observations,
-                            signature = "signature_strokes_${signatureStrokes.size}",
+                            inspectionPhotos = inspectionPhotos.toList(),
+                            signature = if (signatureStrokes.isEmpty()) null else "signature_strokes_${signatureStrokes.size}",
                         )
                         onComplete(service)
                     }
@@ -252,6 +281,81 @@ fun CheckinWizardScreen(
             ) {
                 Text(if (step < 4) "Avancar" else "Confirmar Check-in")
                 Icon(androidx.compose.material.icons.Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PhotoGrid(
+    photos: List<InspectionPhoto>,
+    onRemovePhoto: (String) -> Unit,
+) {
+    val tokens = LocalAutoCheckTokens.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White, RoundedCornerShape(12.dp))
+            .border(1.dp, tokens.border, RoundedCornerShape(12.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = "Fotos capturadas (${photos.size})",
+            style = MaterialTheme.typography.titleLarge,
+            color = tokens.textPrimary,
+        )
+        if (photos.isEmpty()) {
+            Text("Nenhuma foto capturada ainda.", color = tokens.textSecondary)
+        } else {
+            photos.chunked(2).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    row.forEach { photo ->
+                        Column(
+                            modifier = Modifier
+                                .widthIn(min = 200.dp)
+                                .background(Color(0xFFF9FAFB), RoundedCornerShape(10.dp))
+                                .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(10.dp))
+                                .padding(8.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp)
+                                    .background(Color(0xFFE5E7EB), RoundedCornerShape(8.dp)),
+                            ) {
+                                PlatformPhotoPreview(
+                                    imageBytes = photo.bytes,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                            Text(
+                                text = photo.region,
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
+                            Text(
+                                text = photo.timestampLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = tokens.textSecondary,
+                            )
+                            Button(
+                                onClick = { onRemovePhoto(photo.id) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFFEE2E2),
+                                    contentColor = Color(0xFFB91C1C),
+                                ),
+                                modifier = Modifier.padding(top = 6.dp),
+                            ) {
+                                Icon(androidx.compose.material.icons.Icons.Outlined.Delete, contentDescription = null)
+                                Text("Remover")
+                            }
+                        }
+                    }
+                    if (row.size == 1) {
+                        Spacer(Modifier.widthIn(min = 200.dp))
+                    }
+                }
             }
         }
     }
@@ -303,8 +407,8 @@ private fun StepIndicator(step: Int) {
 
 @Composable
 private fun InspectionRegions(
-    completedRegions: List<String>,
-    onToggleRegion: (String) -> Unit,
+    photos: List<InspectionPhoto>,
+    onRegionClick: (String) -> Unit,
 ) {
     val regions = listOf(
         RegionSpot("front", 0.50f, 0.15f),
@@ -322,7 +426,7 @@ private fun InspectionRegions(
             .padding(14.dp),
     ) {
         Text(
-            text = "Clique nas regioes para marcar fotos (${completedRegions.size}/6)",
+            text = "Clique nas regioes para abrir a camera (${photos.size} fotos)",
             style = MaterialTheme.typography.bodyMedium,
             color = tokens.textSecondary,
         )
@@ -343,8 +447,9 @@ private fun InspectionRegions(
             regions.forEach { region ->
                 RegionButton(
                     region = region.id,
-                    completed = completedRegions.contains(region.id),
-                    onToggleRegion = onToggleRegion,
+                    completed = photos.any { it.region == region.id },
+                    count = photos.count { it.region == region.id },
+                    onRegionClick = onRegionClick,
                     modifier = Modifier.align(Alignment.TopStart)
                         .padding(
                             start = (region.x * 600).dp,
@@ -360,11 +465,12 @@ private fun InspectionRegions(
 private fun RegionButton(
     region: String,
     completed: Boolean,
-    onToggleRegion: (String) -> Unit,
+    count: Int,
+    onRegionClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Button(
-        onClick = { onToggleRegion(region) },
+        onClick = { onRegionClick(region) },
         modifier = modifier,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (completed) Color(0xFF16A34A) else Color(0xFFEF4444),
@@ -374,7 +480,7 @@ private fun RegionButton(
             imageVector = if (completed) androidx.compose.material.icons.Icons.Outlined.Check else androidx.compose.material.icons.Icons.Outlined.PhotoCamera,
             contentDescription = null,
         )
-        Text(region)
+        Text("$region ($count)")
     }
 }
 

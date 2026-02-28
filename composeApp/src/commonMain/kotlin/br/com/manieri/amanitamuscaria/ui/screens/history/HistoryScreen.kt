@@ -28,7 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,9 +43,9 @@ import br.com.manieri.amanitamuscaria.ui.theme.LocalAutoCheckTokens
 @Composable
 fun HistoryScreen(services: List<Service>) {
     val tokens = LocalAutoCheckTokens.current
-    var plateFilter by remember { mutableStateOf("") }
-    var clientFilter by remember { mutableStateOf("") }
-    var statusFilter by remember { mutableStateOf("all") }
+    var plateFilter by rememberSaveable { mutableStateOf("") }
+    var clientFilter by rememberSaveable { mutableStateOf("") }
+    var statusFilter by rememberSaveable { mutableStateOf("all") }
 
     val filtered = services.filter { service ->
         val byPlate = plateFilter.isBlank() || service.plate.contains(plateFilter, ignoreCase = true)

@@ -21,6 +21,7 @@ data class InspectionPhoto(
     val region: String,
     val url: String,
     val timestampLabel: String,
+    val bytes: ByteArray? = null,
 )
 
 enum class ServiceStatus {

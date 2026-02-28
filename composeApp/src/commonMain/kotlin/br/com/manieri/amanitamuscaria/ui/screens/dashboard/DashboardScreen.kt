@@ -38,7 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,7 +61,7 @@ fun DashboardScreen(
     onAddService: (Service) -> Unit,
     onCompleteService: (String) -> Unit,
 ) {
-    var showWizard by remember { mutableStateOf(false) }
+    var showWizard by rememberSaveable { mutableStateOf(false) }
     val activeServices = services.filter {
         it.status == ServiceStatus.IN_PROGRESS || it.status == ServiceStatus.WAITING_PICKUP
     }

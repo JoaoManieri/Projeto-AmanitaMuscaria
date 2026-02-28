@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,6 +51,7 @@ import amanitamuscaria.composeapp.generated.resources.Res
 import amanitamuscaria.composeapp.generated.resources.empty_state
 import br.com.manieri.amanitamuscaria.model.Service
 import br.com.manieri.amanitamuscaria.model.ServiceStatus
+import br.com.manieri.amanitamuscaria.report.ReportGenerationResult
 import br.com.manieri.amanitamuscaria.ui.components.StatusBadge
 import br.com.manieri.amanitamuscaria.ui.theme.LocalAutoCheckTokens
 
@@ -60,6 +62,7 @@ fun DashboardScreen(
     onSelectService: (String?) -> Unit,
     onAddService: (Service) -> Unit,
     onCompleteService: (String) -> Unit,
+    onGenerateReport: (Service) -> ReportGenerationResult,
 ) {
     var showWizard by rememberSaveable { mutableStateOf(false) }
     val activeServices = services.filter {
@@ -96,6 +99,7 @@ fun DashboardScreen(
             onCheckout = {
                 selectedService?.let { onCompleteService(it.id) }
             },
+            onGenerateReport = onGenerateReport,
         )
     }
 }
@@ -237,8 +241,10 @@ private fun ServiceDetailsPane(
     modifier: Modifier,
     service: Service?,
     onCheckout: () -> Unit,
+    onGenerateReport: (Service) -> ReportGenerationResult,
 ) {
     val tokens = LocalAutoCheckTokens.current
+    var reportFeedback by remember(service?.id) { mutableStateOf<String?>(null) }
     if (service == null) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -297,7 +303,14 @@ private fun ServiceDetailsPane(
                         }
                     }
                     Button(
-                        onClick = { },
+                        onClick = {
+                            val result = onGenerateReport(service)
+                            reportFeedback = if (result.success) {
+                                "${result.message} (${result.filePath ?: "-"})"
+                            } else {
+                                result.message
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
                     ) {
                         Icon(Icons.Outlined.FileDownload, contentDescription = null)
@@ -314,6 +327,14 @@ private fun ServiceDetailsPane(
             }
 
             Spacer(Modifier.height(18.dp))
+            reportFeedback?.let { feedback ->
+                Text(
+                    text = feedback,
+                    color = if (feedback.startsWith("PDF gerado")) Color(0xFF166534) else Color(0xFFB91C1C),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(12.dp))
+            }
             DetailCard(
                 title = "Dados do Veiculo",
                 icon = { Icon(Icons.Outlined.DirectionsCar, contentDescription = null, tint = tokens.sidebarAccent) },

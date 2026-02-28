@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 
 import br.com.manieri.amanitamuscaria.navigation.AppScreen
+import br.com.manieri.amanitamuscaria.report.rememberPdfReportGenerator
 import br.com.manieri.amanitamuscaria.state.rememberAutoCheckAppState
 import br.com.manieri.amanitamuscaria.ui.layout.AppSidebar
 import br.com.manieri.amanitamuscaria.ui.screens.dashboard.DashboardScreen
@@ -39,6 +40,7 @@ fun App() {
     AutoCheckTheme {
         var activeScreen by rememberSaveable { mutableStateOf(AppScreen.DASHBOARD) }
         val appState = rememberAutoCheckAppState()
+        val pdfReportGenerator = rememberPdfReportGenerator()
         val tokens = LocalAutoCheckTokens.current
         val tabStateHolder = rememberSaveableStateHolder()
 
@@ -80,9 +82,17 @@ fun App() {
                                 onSelectService = appState::selectService,
                                 onAddService = appState::addService,
                                 onCompleteService = appState::completeService,
+                                onGenerateReport = { service ->
+                                    pdfReportGenerator.generateServiceReport(service, appState.settings)
+                                },
                             )
 
-                            AppScreen.HISTORY -> HistoryScreen(services = appState.services)
+                            AppScreen.HISTORY -> HistoryScreen(
+                                services = appState.services,
+                                onGenerateReport = { service ->
+                                    pdfReportGenerator.generateServiceReport(service, appState.settings)
+                                },
+                            )
                             AppScreen.SETTINGS -> SettingsScreen(
                                 settings = appState.settings,
                                 onUpdateSettings = { updated -> appState.updateSettings { updated } },

@@ -37,15 +37,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.manieri.amanitamuscaria.model.Service
 import br.com.manieri.amanitamuscaria.model.ServiceStatus
+import br.com.manieri.amanitamuscaria.report.ReportGenerationResult
 import br.com.manieri.amanitamuscaria.ui.components.StatusBadge
 import br.com.manieri.amanitamuscaria.ui.theme.LocalAutoCheckTokens
 
 @Composable
-fun HistoryScreen(services: List<Service>) {
+fun HistoryScreen(
+    services: List<Service>,
+    onGenerateReport: (Service) -> ReportGenerationResult,
+) {
     val tokens = LocalAutoCheckTokens.current
     var plateFilter by rememberSaveable { mutableStateOf("") }
     var clientFilter by rememberSaveable { mutableStateOf("") }
     var statusFilter by rememberSaveable { mutableStateOf("all") }
+    var reportFeedback by rememberSaveable { mutableStateOf<String?>(null) }
 
     val filtered = services.filter { service ->
         val byPlate = plateFilter.isBlank() || service.plate.contains(plateFilter, ignoreCase = true)
@@ -88,7 +93,26 @@ fun HistoryScreen(services: List<Service>) {
         StatsRow(services)
 
         Spacer(Modifier.height(16.dp))
-        HistoryTable(filtered)
+        reportFeedback?.let { feedback ->
+            Text(
+                text = feedback,
+                color = if (feedback.startsWith("PDF gerado")) Color(0xFF166534) else Color(0xFFB91C1C),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(Modifier.height(12.dp))
+        }
+
+        HistoryTable(
+            services = filtered,
+            onGenerateReport = { service ->
+                val result = onGenerateReport(service)
+                reportFeedback = if (result.success) {
+                    "${result.message} (${result.filePath ?: "-"})"
+                } else {
+                    result.message
+                }
+            },
+        )
     }
 }
 
@@ -174,7 +198,10 @@ private fun StatCard(label: String, value: String, color: Color) {
 }
 
 @Composable
-private fun HistoryTable(services: List<Service>) {
+private fun HistoryTable(
+    services: List<Service>,
+    onGenerateReport: (Service) -> Unit,
+) {
     val tokens = LocalAutoCheckTokens.current
     Column(
         modifier = Modifier
@@ -202,9 +229,9 @@ private fun HistoryTable(services: List<Service>) {
                     Cell("${service.vehicle.brand} ${service.vehicle.model}", Modifier.width(180.dp))
                     Box(modifier = Modifier.width(190.dp)) { StatusBadge(service.status) }
                     Row(modifier = Modifier.width(160.dp), horizontalArrangement = Arrangement.End) {
-                        TinyAction("Ver", Icons.Outlined.RemoveRedEye)
-                        TinyAction("Print", Icons.Outlined.Print)
-                        TinyAction("Down", Icons.Outlined.Download)
+                        TinyAction("Ver", Icons.Outlined.RemoveRedEye) { }
+                        TinyAction("Print", Icons.Outlined.Print) { onGenerateReport(service) }
+                        TinyAction("Down", Icons.Outlined.Download) { onGenerateReport(service) }
                     }
                 }
             }
@@ -247,9 +274,13 @@ private fun Cell(text: String, modifier: Modifier, bold: Boolean = false) {
 }
 
 @Composable
-private fun TinyAction(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+private fun TinyAction(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+) {
     Button(
-        onClick = { },
+        onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = Color(0xFF374151)),
     ) {
         androidx.compose.material3.Icon(icon, contentDescription = text)

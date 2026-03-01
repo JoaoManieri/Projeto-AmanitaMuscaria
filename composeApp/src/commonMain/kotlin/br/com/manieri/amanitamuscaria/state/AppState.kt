@@ -42,7 +42,7 @@ class AutoCheckAppState(
     init {
         val restoredState = loadPersistedState()
         services.addAll(restoredState?.services ?: emptyList())
-        selectedServiceId = sanitizeSelectedServiceId(restoredState?.selectedServiceId)
+        selectedServiceId = null
         settings = restoredState?.settings ?: defaultSettings()
     }
 
@@ -65,6 +65,7 @@ class AutoCheckAppState(
                 status = ServiceStatus.COMPLETED,
                 exitDateLabel = currentDateTimeLabel(),
             )
+            selectedServiceId = null
             persistState()
         }
     }
@@ -75,8 +76,8 @@ class AutoCheckAppState(
     }
 
     private fun sanitizeSelectedServiceId(selectedId: String?): String? {
-        if (selectedId == null) return services.firstOrNull()?.id
-        return selectedId.takeIf { id -> services.any { it.id == id } } ?: services.firstOrNull()?.id
+        if (selectedId == null) return null
+        return selectedId.takeIf { id -> services.any { it.id == id } }
     }
 
     private fun loadPersistedState(): PersistedAppState? {

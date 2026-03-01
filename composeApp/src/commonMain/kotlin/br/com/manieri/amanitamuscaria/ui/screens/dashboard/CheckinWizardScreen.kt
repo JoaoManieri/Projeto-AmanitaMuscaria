@@ -330,52 +330,74 @@ private fun PhotoGrid(
         if (photos.isEmpty()) {
             Text("Nenhuma foto capturada ainda.", color = tokens.textSecondary)
         } else {
-            photos.chunked(2).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    row.forEach { photo ->
-                        Column(
-                            modifier = Modifier
-                                .widthIn(min = 200.dp)
-                                .background(Color(0xFFF9FAFB), RoundedCornerShape(10.dp))
-                                .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(10.dp))
-                                .padding(8.dp),
+            val byRegionSummary = photos
+                .groupingBy { it.region }
+                .eachCount()
+                .toList()
+                .sortedBy { it.first }
+                .joinToString(", ") { (region, count) -> "$region: $count" }
+
+            Text(
+                text = "Por regiao: $byRegionSummary",
+                style = MaterialTheme.typography.bodySmall,
+                color = tokens.textSecondary,
+            )
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val twoColumns = maxWidth >= 520.dp
+                val rows = if (twoColumns) photos.chunked(2) else photos.map { listOf(it) }
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    rows.forEach { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(120.dp)
-                                    .background(Color(0xFFE5E7EB), RoundedCornerShape(8.dp)),
-                            ) {
-                                PlatformPhotoPreview(
-                                    imageBytes = photo.bytes,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
+                            row.forEach { photo ->
+                                Column(
+                                    modifier = Modifier
+                                        .then(if (twoColumns) Modifier.weight(1f) else Modifier.fillMaxWidth())
+                                        .background(Color(0xFFF9FAFB), RoundedCornerShape(10.dp))
+                                        .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(10.dp))
+                                        .padding(8.dp),
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(120.dp)
+                                            .background(Color(0xFFE5E7EB), RoundedCornerShape(8.dp)),
+                                    ) {
+                                        PlatformPhotoPreview(
+                                            imageBytes = photo.bytes,
+                                            modifier = Modifier.fillMaxSize(),
+                                        )
+                                    }
+                                    Text(
+                                        text = photo.region,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        modifier = Modifier.padding(top = 6.dp),
+                                    )
+                                    Text(
+                                        text = photo.timestampLabel,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = tokens.textSecondary,
+                                    )
+                                    Button(
+                                        onClick = { onRemovePhoto(photo.id) },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFFFEE2E2),
+                                            contentColor = Color(0xFFB91C1C),
+                                        ),
+                                        modifier = Modifier.padding(top = 6.dp),
+                                    ) {
+                                        Icon(androidx.compose.material.icons.Icons.Outlined.Delete, contentDescription = null)
+                                        Text("Remover")
+                                    }
+                                }
                             }
-                            Text(
-                                text = photo.region,
-                                style = MaterialTheme.typography.labelLarge,
-                                modifier = Modifier.padding(top = 6.dp),
-                            )
-                            Text(
-                                text = photo.timestampLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = tokens.textSecondary,
-                            )
-                            Button(
-                                onClick = { onRemovePhoto(photo.id) },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFFFEE2E2),
-                                    contentColor = Color(0xFFB91C1C),
-                                ),
-                                modifier = Modifier.padding(top = 6.dp),
-                            ) {
-                                Icon(androidx.compose.material.icons.Icons.Outlined.Delete, contentDescription = null)
-                                Text("Remover")
+                            if (twoColumns && row.size == 1) {
+                                Spacer(Modifier.weight(1f))
                             }
                         }
-                    }
-                    if (row.size == 1) {
-                        Spacer(Modifier.widthIn(min = 200.dp))
                     }
                 }
             }

@@ -27,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Done
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Person
@@ -69,7 +68,7 @@ fun DashboardScreen(
     val activeServices = services.filter {
         it.status == ServiceStatus.IN_PROGRESS || it.status == ServiceStatus.WAITING_PICKUP
     }
-    val selectedService = services.firstOrNull { it.id == selectedServiceId }
+    val selectedService = activeServices.firstOrNull { it.id == selectedServiceId }
 
     if (showWizard) {
         CheckinWizardScreen(
@@ -324,13 +323,6 @@ private fun ServiceDetailsPane(
                                 Icon(Icons.Outlined.FileDownload, contentDescription = null)
                                 Text("Gerar Relatorio")
                             }
-                            Button(
-                                onClick = { },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
-                                modifier = Modifier.width(52.dp),
-                            ) {
-                                Icon(Icons.Outlined.Edit, contentDescription = null)
-                            }
                         }
                     }
                 } else {
@@ -363,13 +355,6 @@ private fun ServiceDetailsPane(
                             ) {
                                 Icon(Icons.Outlined.FileDownload, contentDescription = null)
                                 Text("Gerar Relatorio")
-                            }
-                            Button(
-                                onClick = { },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
-                                modifier = Modifier.width(52.dp),
-                            ) {
-                                Icon(Icons.Outlined.Edit, contentDescription = null)
                             }
                         }
                     }

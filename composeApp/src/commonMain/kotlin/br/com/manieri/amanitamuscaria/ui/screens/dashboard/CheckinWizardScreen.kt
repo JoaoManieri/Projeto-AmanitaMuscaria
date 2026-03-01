@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,14 +43,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.ContentScale
 import org.jetbrains.compose.resources.painterResource
 import amanitamuscaria.composeapp.generated.resources.Res
 import amanitamuscaria.composeapp.generated.resources.car_diagram
+import androidx.compose.foundation.text.KeyboardOptions
 import br.com.manieri.amanitamuscaria.model.Client
 import br.com.manieri.amanitamuscaria.model.InspectionPhoto
 import br.com.manieri.amanitamuscaria.model.Service
@@ -109,43 +113,57 @@ fun CheckinWizardScreen(
         else -> true
     }
 
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .imePadding()
             .background(MaterialTheme.colorScheme.surface),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Novo Check-in",
-                style = MaterialTheme.typography.headlineLarge,
-                color = tokens.textPrimary,
-            )
-            TextButton(onClick = onCancel) {
-                Text("Cancelar")
-            }
-        }
+        val isCompactLayout = maxWidth < 980.dp || maxHeight < 700.dp
+        val headerHorizontalPadding = if (isCompactLayout) 16.dp else 24.dp
+        val headerVerticalPadding = if (isCompactLayout) 10.dp else 20.dp
+        val contentVerticalPadding = if (isCompactLayout) 10.dp else 16.dp
+        val sectionSpacing = if (isCompactLayout) 10.dp else 14.dp
+        val footerVerticalPadding = if (isCompactLayout) 8.dp else 14.dp
+        val actionButtonHeight = if (isCompactLayout) 42.dp else 48.dp
+        val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
 
-        StepIndicator(step = step)
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Column(
-                modifier = Modifier.widthIn(max = 920.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = headerHorizontalPadding, vertical = headerVerticalPadding),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                Text(
+                    text = "Novo Check-in",
+                    style = if (isCompactLayout) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
+                    color = tokens.textPrimary,
+                )
+                TextButton(onClick = onCancel) {
+                    Text("Cancelar")
+                }
+            }
+
+            StepIndicator(
+                step = step,
+                compact = isCompactLayout,
+                horizontalPadding = headerHorizontalPadding,
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = headerHorizontalPadding, vertical = contentVerticalPadding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Column(
+                    modifier = Modifier.widthIn(max = if (isCompactLayout) 820.dp else 920.dp),
+                    verticalArrangement = Arrangement.spacedBy(sectionSpacing),
+                ) {
                 when (step) {
                     1 -> {
                         Field("Placa", plate) { plate = it.uppercase() }
@@ -218,64 +236,73 @@ fun CheckinWizardScreen(
 
                 }
             }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(tokens.canvasBackground)
-                .padding(horizontal = 24.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Button(
-                onClick = { if (step > 1) step -= 1 },
-                enabled = step > 1,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = tokens.textPrimary,
-                ),
-            ) {
-                Icon(androidx.compose.material.icons.Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null)
-                Text("Voltar")
             }
 
-            Button(
-                onClick = {
-                    if (step < 3) {
-                        step += 1
-                    } else {
-                        val service = Service(
-                            id = Random.nextInt(10000, 99999).toString(),
-                            plate = plate,
-                            vehicle = Vehicle(
-                                plate = plate,
-                                brand = brand,
-                                model = model,
-                                year = year.toIntOrNull() ?: 0,
-                                color = color,
-                                mileage = mileage.toIntOrNull() ?: 0,
-                            ),
-                            client = Client(
-                                name = clientName,
-                                phone = phone,
-                                email = email.ifBlank { null },
-                                document = document.ifBlank { null },
-                            ),
-                            status = ServiceStatus.IN_PROGRESS,
-                            entryDateLabel = currentDateTimeLabel(),
-                            observations = observations,
-                            inspectionPhotos = inspectionPhotos.toList(),
-                            signature = null,
-                        )
-                        onComplete(service)
-                    }
-                },
-                enabled = canProceed,
-                colors = ButtonDefaults.buttonColors(containerColor = tokens.sidebarAccent),
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(tokens.canvasBackground)
+                    .padding(horizontal = headerHorizontalPadding, vertical = footerVerticalPadding),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(if (step < 3) "Avancar" else "Confirmar Check-in")
-                Icon(androidx.compose.material.icons.Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
+                Button(
+                    onClick = { if (step > 1) step -= 1 },
+                    enabled = step > 1,
+                    modifier = Modifier.height(actionButtonHeight),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = tokens.textPrimary,
+                    ),
+                ) {
+                    Icon(androidx.compose.material.icons.Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null)
+                    Text("Etapa anterior")
+                }
+
+                Button(
+                    onClick = {
+                        if (step < 3) {
+                            step += 1
+                        } else {
+                            val service = Service(
+                                id = Random.nextInt(10000, 99999).toString(),
+                                plate = plate,
+                                vehicle = Vehicle(
+                                    plate = plate,
+                                    brand = brand,
+                                    model = model,
+                                    year = year.toIntOrNull() ?: 0,
+                                    color = color,
+                                    mileage = mileage.toIntOrNull() ?: 0,
+                                ),
+                                client = Client(
+                                    name = clientName,
+                                    phone = phone,
+                                    email = email.ifBlank { null },
+                                    document = document.ifBlank { null },
+                                ),
+                                status = ServiceStatus.IN_PROGRESS,
+                                entryDateLabel = currentDateTimeLabel(),
+                                observations = observations,
+                                inspectionPhotos = inspectionPhotos.toList(),
+                                signature = null,
+                            )
+                            onComplete(service)
+                        }
+                    },
+                    enabled = canProceed,
+                    modifier = Modifier.height(actionButtonHeight),
+                    colors = ButtonDefaults.buttonColors(containerColor = tokens.sidebarAccent),
+                ) {
+                    Text(
+                        if (step < 3) {
+                            if (imeVisible) "Proxima etapa" else "Avancar etapa"
+                        } else {
+                            "Finalizar Check-in"
+                        }
+                    )
+                    Icon(androidx.compose.material.icons.Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
+                }
             }
         }
     }
@@ -357,13 +384,21 @@ private fun PhotoGrid(
 }
 
 @Composable
-private fun StepIndicator(step: Int) {
+private fun StepIndicator(
+    step: Int,
+    compact: Boolean,
+    horizontalPadding: androidx.compose.ui.unit.Dp,
+) {
     val labels = listOf("Veiculo", "Cliente", "Inspecao")
     val tokens = LocalAutoCheckTokens.current
+    val verticalPadding = if (compact) 6.dp else 12.dp
+    val bubbleHorizontalPadding = if (compact) 11.dp else 14.dp
+    val bubbleVerticalPadding = if (compact) 7.dp else 10.dp
+    val labelTopPadding = if (compact) 2.dp else 4.dp
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -382,7 +417,7 @@ private fun StepIndicator(step: Int) {
                             },
                             shape = CircleShape,
                         )
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                        .padding(horizontal = bubbleHorizontalPadding, vertical = bubbleVerticalPadding),
                 ) {
                     Text(
                         text = current.toString(),
@@ -393,7 +428,7 @@ private fun StepIndicator(step: Int) {
                     text = label,
                     style = MaterialTheme.typography.labelSmall,
                     color = if (active) tokens.sidebarAccent else tokens.textSecondary,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.padding(top = labelTopPadding),
                 )
             }
         }

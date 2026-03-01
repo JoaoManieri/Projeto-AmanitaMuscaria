@@ -53,6 +53,7 @@ import br.com.manieri.amanitamuscaria.model.Vehicle
 import br.com.manieri.amanitamuscaria.platform.rememberPlatformCameraCapture
 import br.com.manieri.amanitamuscaria.platform.PlatformPhotoPreview
 import br.com.manieri.amanitamuscaria.ui.theme.LocalAutoCheckTokens
+import br.com.manieri.amanitamuscaria.util.currentDateTimeLabel
 import kotlin.random.Random
 
 @Composable
@@ -87,7 +88,7 @@ fun CheckinWizardScreen(
                     id = Random.nextInt(100000, 999999).toString(),
                     region = region,
                     url = "captured://$region/${inspectionPhotos.size + 1}",
-                    timestampLabel = "Agora",
+                    timestampLabel = currentDateTimeLabel(),
                     bytes = it,
                 ),
             )
@@ -239,7 +240,7 @@ fun CheckinWizardScreen(
                                 document = document.ifBlank { null },
                             ),
                             status = ServiceStatus.IN_PROGRESS,
-                            entryDateLabel = "Agora",
+                            entryDateLabel = currentDateTimeLabel(),
                             observations = observations,
                             inspectionPhotos = inspectionPhotos.toList(),
                             signature = null,

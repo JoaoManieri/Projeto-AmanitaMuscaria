@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import br.com.manieri.amanitamuscaria.model.Service
 import br.com.manieri.amanitamuscaria.model.ServiceStatus
 import br.com.manieri.amanitamuscaria.model.WorkshopSettings
+import br.com.manieri.amanitamuscaria.util.currentDateTimeLabel
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -62,7 +63,7 @@ class AutoCheckAppState(
             val item = services[index]
             services[index] = item.copy(
                 status = ServiceStatus.COMPLETED,
-                exitDateLabel = "Hoje",
+                exitDateLabel = currentDateTimeLabel(),
             )
             persistState()
         }

@@ -2,6 +2,7 @@ package br.com.manieri.amanitamuscaria.ui.screens.history
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,15 +17,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Print
-import androidx.compose.material.icons.outlined.RemoveRedEye
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import br.com.manieri.amanitamuscaria.model.Service
 import br.com.manieri.amanitamuscaria.model.ServiceStatus
@@ -49,15 +55,18 @@ fun HistoryScreen(
     val tokens = LocalAutoCheckTokens.current
     var plateFilter by rememberSaveable { mutableStateOf("") }
     var clientFilter by rememberSaveable { mutableStateOf("") }
-    var statusFilter by rememberSaveable { mutableStateOf("all") }
+    var statusFilterName by rememberSaveable { mutableStateOf(HistoryStatusFilter.ALL.name) }
+    var dialogServiceId by rememberSaveable { mutableStateOf<String?>(null) }
     var reportFeedback by rememberSaveable { mutableStateOf<String?>(null) }
+    val statusFilter = HistoryStatusFilter.entries.firstOrNull { it.name == statusFilterName } ?: HistoryStatusFilter.ALL
 
     val filtered = services.filter { service ->
-        val byPlate = plateFilter.isBlank() || service.plate.contains(plateFilter, ignoreCase = true)
-        val byClient = clientFilter.isBlank() || service.client.name.contains(clientFilter, ignoreCase = true)
-        val byStatus = statusFilter == "all" || service.status.name.equals(statusFilter, ignoreCase = true)
+        val byPlate = plateFilter.isBlank() || service.plate.contains(plateFilter.trim(), ignoreCase = true)
+        val byClient = clientFilter.isBlank() || service.client.name.contains(clientFilter.trim(), ignoreCase = true)
+        val byStatus = matchesStatusFilter(service.status, statusFilter)
         byPlate && byClient && byStatus
     }
+    val dialogService = services.firstOrNull { it.id == dialogServiceId }
 
     Column(
         modifier = Modifier
@@ -86,11 +95,13 @@ fun HistoryScreen(
             statusFilter = statusFilter,
             onPlateChange = { plateFilter = it },
             onClientChange = { clientFilter = it },
-            onStatusChange = { statusFilter = it },
+            onStatusChange = { selected -> statusFilterName = selected.name },
+            onClearFilters = {
+                plateFilter = ""
+                clientFilter = ""
+                statusFilterName = HistoryStatusFilter.ALL.name
+            },
         )
-
-        Spacer(Modifier.height(16.dp))
-        StatsRow(services)
 
         Spacer(Modifier.height(16.dp))
         reportFeedback?.let { feedback ->
@@ -104,7 +115,17 @@ fun HistoryScreen(
 
         HistoryTable(
             services = filtered,
-            onGenerateReport = { service ->
+            onOpenService = { service ->
+                dialogServiceId = service.id
+            },
+        )
+    }
+
+    dialogService?.let { service ->
+        ServiceDetailsDialog(
+            service = service,
+            onDismiss = { dialogServiceId = null },
+            onGenerateReport = {
                 val result = onGenerateReport(service)
                 reportFeedback = if (result.success) {
                     "${result.message} (${result.filePath ?: "-"})"
@@ -116,16 +137,20 @@ fun HistoryScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterCard(
     plateFilter: String,
     clientFilter: String,
-    statusFilter: String,
+    statusFilter: HistoryStatusFilter,
     onPlateChange: (String) -> Unit,
     onClientChange: (String) -> Unit,
-    onStatusChange: (String) -> Unit,
+    onStatusChange: (HistoryStatusFilter) -> Unit,
+    onClearFilters: () -> Unit,
 ) {
     val tokens = LocalAutoCheckTokens.current
+    var statusExpanded by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -149,58 +174,54 @@ private fun FilterCard(
                 singleLine = true,
                 label = { Text("Buscar por cliente") },
             )
-            OutlinedTextField(
+            ExposedDropdownMenuBox(
+                expanded = statusExpanded,
+                onExpandedChange = { statusExpanded = !statusExpanded },
                 modifier = Modifier.width(320.dp),
-                value = statusFilter,
-                onValueChange = onStatusChange,
-                singleLine = true,
-                label = { Text("Status (all/in_progress/waiting_pickup/completed)") },
-            )
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
+                    value = statusFilter.label,
+                    onValueChange = { },
+                    readOnly = true,
+                    singleLine = true,
+                    label = { Text("Status") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = statusExpanded) },
+                )
+                ExposedDropdownMenu(
+                    expanded = statusExpanded,
+                    onDismissRequest = { statusExpanded = false },
+                ) {
+                    HistoryStatusFilter.entries.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.label) },
+                            onClick = {
+                                onStatusChange(option)
+                                statusExpanded = false
+                            },
+                        )
+                    }
+                }
+            }
+            Button(
+                onClick = onClearFilters,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = tokens.textPrimary,
+                ),
+            ) {
+                Text("Limpar")
+            }
         }
-    }
-}
-
-@Composable
-private fun StatsRow(services: List<Service>) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        StatCard("Total", services.size.toString(), Color(0xFF111827))
-        StatCard(
-            "Em andamento",
-            services.count { it.status == ServiceStatus.IN_PROGRESS }.toString(),
-            Color(0xFF2563EB),
-        )
-        StatCard(
-            "Aguardando",
-            services.count { it.status == ServiceStatus.WAITING_PICKUP }.toString(),
-            Color(0xFFEA580C),
-        )
-        StatCard(
-            "Finalizados",
-            services.count { it.status == ServiceStatus.COMPLETED }.toString(),
-            Color(0xFF16A34A),
-        )
-    }
-}
-
-@Composable
-private fun StatCard(label: String, value: String, color: Color) {
-    val tokens = LocalAutoCheckTokens.current
-    Column(
-        modifier = Modifier
-            .width(250.dp)
-            .background(Color.White, RoundedCornerShape(tokens.radiusLg))
-            .border(1.dp, tokens.border, RoundedCornerShape(tokens.radiusLg))
-            .padding(14.dp),
-    ) {
-        Text(label, color = tokens.textSecondary, style = MaterialTheme.typography.bodyMedium)
-        Text(value, color = color, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
 private fun HistoryTable(
     services: List<Service>,
-    onGenerateReport: (Service) -> Unit,
+    onOpenService: (Service) -> Unit,
 ) {
     val tokens = LocalAutoCheckTokens.current
     Column(
@@ -220,19 +241,15 @@ private fun HistoryTable(
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(0.5.dp, Color(0xFFF3F4F6))
+                        .clickable { onOpenService(service) }
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Cell(service.entryDateLabel, Modifier.width(160.dp))
-                    Cell(service.plate, Modifier.width(120.dp), bold = true)
-                    Cell(service.client.name, Modifier.width(180.dp))
-                    Cell("${service.vehicle.brand} ${service.vehicle.model}", Modifier.width(180.dp))
-                    Box(modifier = Modifier.width(190.dp)) { StatusBadge(service.status) }
-                    Row(modifier = Modifier.width(160.dp), horizontalArrangement = Arrangement.End) {
-                        TinyAction("Ver", Icons.Outlined.RemoveRedEye) { }
-                        TinyAction("Print", Icons.Outlined.Print) { onGenerateReport(service) }
-                        TinyAction("Down", Icons.Outlined.Download) { onGenerateReport(service) }
-                    }
+                    Cell(service.entryDateLabel, Modifier.weight(1.2f))
+                    Cell(service.plate, Modifier.weight(1f), bold = true)
+                    Cell(service.client.name, Modifier.weight(1.6f))
+                    Cell("${service.vehicle.brand} ${service.vehicle.model}", Modifier.weight(1.9f))
+                    Box(modifier = Modifier.weight(1.3f)) { StatusBadge(service.status) }
                 }
             }
         }
@@ -247,19 +264,24 @@ private fun HeaderRow() {
             .background(Color(0xFFF9FAFB))
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
-        HeaderCell("Data", Modifier.width(160.dp))
-        HeaderCell("Placa", Modifier.width(120.dp))
-        HeaderCell("Cliente", Modifier.width(180.dp))
-        HeaderCell("Veiculo", Modifier.width(180.dp))
-        HeaderCell("Status", Modifier.width(190.dp))
-        HeaderCell("Acoes", Modifier.width(160.dp), right = true)
+        HeaderCell("Data", Modifier.weight(1.2f))
+        HeaderCell("Placa", Modifier.weight(1f))
+        HeaderCell("Cliente", Modifier.weight(1.6f))
+        HeaderCell("Veiculo", Modifier.weight(1.9f))
+        HeaderCell("Status", Modifier.weight(1.3f))
     }
 }
 
 @Composable
 private fun HeaderCell(text: String, modifier: Modifier, right: Boolean = false) {
     Box(modifier = modifier, contentAlignment = if (right) Alignment.CenterEnd else Alignment.CenterStart) {
-        Text(text, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -270,19 +292,69 @@ private fun Cell(text: String, modifier: Modifier, bold: Boolean = false) {
         modifier = modifier,
         fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
         color = Color(0xFF111827),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
     )
 }
 
 @Composable
-private fun TinyAction(
-    text: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
+private fun ServiceDetailsDialog(
+    service: Service,
+    onDismiss: () -> Unit,
+    onGenerateReport: () -> Unit,
 ) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = Color(0xFF374151)),
-    ) {
-        androidx.compose.material3.Icon(icon, contentDescription = text)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            androidx.compose.material3.Icon(Icons.Outlined.Description, contentDescription = null)
+        },
+        title = {
+            Text("Detalhes do atendimento")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Placa: ${service.plate}", fontWeight = FontWeight.SemiBold)
+                Text("Cliente: ${service.client.name}")
+                Text("Telefone: ${service.client.phone}")
+                Text("Email: ${service.client.email ?: "-"}")
+                Text("Documento: ${service.client.document ?: "-"}")
+                Text("Veiculo: ${service.vehicle.brand} ${service.vehicle.model} (${service.vehicle.year})")
+                Text("Cor: ${service.vehicle.color} | Km: ${service.vehicle.mileage}")
+                Text("Entrada: ${service.entryDateLabel}")
+                Text("Saida: ${service.exitDateLabel ?: "-"}")
+                Text("Status: ${service.status.name}")
+                Text("Fotos de inspecao: ${service.inspectionPhotos.size}")
+                Text("Observacoes: ${service.observations.ifBlank { "Nenhuma observacao registrada." }}")
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onGenerateReport,
+                colors = ButtonDefaults.buttonColors(containerColor = LocalAutoCheckTokens.current.sidebarAccent),
+            ) {
+                Text("Gerar/Abrir PDF")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Fechar")
+            }
+        },
+    )
+}
+
+private fun matchesStatusFilter(status: ServiceStatus, filter: HistoryStatusFilter): Boolean {
+    return when (filter) {
+        HistoryStatusFilter.ALL -> true
+        HistoryStatusFilter.IN_PROGRESS -> status == ServiceStatus.IN_PROGRESS
+        HistoryStatusFilter.WAITING_PICKUP -> status == ServiceStatus.WAITING_PICKUP
+        HistoryStatusFilter.COMPLETED -> status == ServiceStatus.COMPLETED
     }
+}
+
+private enum class HistoryStatusFilter(val label: String) {
+    ALL("Todos"),
+    IN_PROGRESS("Em andamento"),
+    WAITING_PICKUP("Aguardando retirada"),
+    COMPLETED("Finalizado"),
 }

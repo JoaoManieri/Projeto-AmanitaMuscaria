@@ -1,13 +1,17 @@
 package br.com.manieri.amanitamuscaria.report
 
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
 import br.com.manieri.amanitamuscaria.model.InspectionPhoto
 import br.com.manieri.amanitamuscaria.model.Service
 import br.com.manieri.amanitamuscaria.model.WorkshopSettings
@@ -34,10 +38,16 @@ private class AndroidPdfReportGenerator(
             val outputFile = File(reportsDir, fileName)
 
             createPdf(outputFile, service, settings)
+            val opened = openPdf(outputFile)
+            val feedback = if (opened) {
+                "PDF gerado e aberto: ${outputFile.name}"
+            } else {
+                "PDF gerado: ${outputFile.name} (nao foi possivel abrir automaticamente)"
+            }
 
             ReportGenerationResult(
                 success = true,
-                message = "PDF gerado: ${outputFile.name}",
+                message = feedback,
                 filePath = outputFile.absolutePath,
             )
         }.getOrElse { error ->
@@ -212,6 +222,30 @@ private class AndroidPdfReportGenerator(
                 )
             }
             setCursorY(top + blockHeight)
+        }
+    }
+
+    private fun openPdf(file: File): Boolean {
+        val uri: Uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file,
+        )
+        val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/pdf")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        return runCatching {
+            context.startActivity(viewIntent)
+            true
+        }.getOrElse { error ->
+            if (error is ActivityNotFoundException) {
+                false
+            } else {
+                throw error
+            }
         }
     }
 }

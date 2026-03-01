@@ -2,8 +2,6 @@ package br.com.manieri.amanitamuscaria.ui.screens.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Button
@@ -42,10 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.ContentScale
@@ -85,8 +78,6 @@ fun CheckinWizardScreen(
     var observations by remember { mutableStateOf("") }
     val inspectionPhotos = remember { mutableStateListOf<InspectionPhoto>() }
     var pendingRegion by remember { mutableStateOf<String?>(null) }
-    val signatureStrokes = remember { mutableStateListOf<List<androidx.compose.ui.geometry.Offset>>() }
-    var currentStroke by remember { mutableStateOf<List<androidx.compose.ui.geometry.Offset>>(emptyList()) }
 
     val launchCamera = rememberPlatformCameraCapture(
         onImageCaptured = {
@@ -201,26 +192,6 @@ fun CheckinWizardScreen(
                         )
                     }
 
-                    4 -> {
-                        Text(
-                            text = "Assinatura do cliente",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        SignaturePad(
-                            strokes = signatureStrokes,
-                            currentStroke = currentStroke,
-                            onStrokeChange = { currentStroke = it },
-                            onStrokeCommit = { stroke ->
-                                if (stroke.size > 1) signatureStrokes.add(stroke)
-                                currentStroke = emptyList()
-                            },
-                            onClear = {
-                                signatureStrokes.clear()
-                                currentStroke = emptyList()
-                            },
-                        )
-                    }
                 }
             }
         }
@@ -247,7 +218,7 @@ fun CheckinWizardScreen(
 
             Button(
                 onClick = {
-                    if (step < 4) {
+                    if (step < 3) {
                         step += 1
                     } else {
                         val service = Service(
@@ -271,7 +242,7 @@ fun CheckinWizardScreen(
                             entryDateLabel = "Agora",
                             observations = observations,
                             inspectionPhotos = inspectionPhotos.toList(),
-                            signature = if (signatureStrokes.isEmpty()) null else "signature_strokes_${signatureStrokes.size}",
+                            signature = null,
                         )
                         onComplete(service)
                     }
@@ -279,7 +250,7 @@ fun CheckinWizardScreen(
                 enabled = canProceed,
                 colors = ButtonDefaults.buttonColors(containerColor = tokens.sidebarAccent),
             ) {
-                Text(if (step < 4) "Avancar" else "Confirmar Check-in")
+                Text(if (step < 3) "Avancar" else "Confirmar Check-in")
                 Icon(androidx.compose.material.icons.Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
             }
         }
@@ -363,7 +334,7 @@ private fun PhotoGrid(
 
 @Composable
 private fun StepIndicator(step: Int) {
-    val labels = listOf("Veiculo", "Cliente", "Inspecao", "Assinatura")
+    val labels = listOf("Veiculo", "Cliente", "Inspecao")
     val tokens = LocalAutoCheckTokens.current
     Row(
         modifier = Modifier
@@ -489,85 +460,6 @@ private data class RegionSpot(
     val x: Float,
     val y: Float,
 )
-
-@Composable
-private fun SignaturePad(
-    strokes: List<List<androidx.compose.ui.geometry.Offset>>,
-    currentStroke: List<androidx.compose.ui.geometry.Offset>,
-    onStrokeChange: (List<androidx.compose.ui.geometry.Offset>) -> Unit,
-    onStrokeCommit: (List<androidx.compose.ui.geometry.Offset>) -> Unit,
-    onClear: () -> Unit,
-) {
-    val tokens = LocalAutoCheckTokens.current
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(260.dp)
-                .background(Color.White, RoundedCornerShape(12.dp))
-                .border(2.dp, tokens.border, RoundedCornerShape(12.dp)),
-        ) {
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                onStrokeChange(listOf(offset))
-                            },
-                            onDragEnd = {
-                                onStrokeCommit(currentStroke)
-                            },
-                            onDragCancel = {
-                                onStrokeChange(emptyList())
-                            },
-                            onDrag = { change, _ ->
-                                onStrokeChange(currentStroke + change.position)
-                            },
-                        )
-                    },
-            ) {
-                strokes.forEach { stroke ->
-                    drawStroke(stroke)
-                }
-                drawStroke(currentStroke)
-            }
-            if (strokes.isEmpty() && currentStroke.isEmpty()) {
-                Text(
-                    text = "Assine aqui",
-                    modifier = Modifier.align(Alignment.Center),
-                    color = tokens.textSecondary,
-                    style = TextStyle(fontWeight = FontWeight.Medium),
-                )
-            }
-        }
-        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = if (strokes.isEmpty()) "Assinatura pendente" else "Assinatura capturada",
-                color = if (strokes.isEmpty()) Color(0xFFDC2626) else Color(0xFF16A34A),
-            )
-            Button(
-                onClick = onClear,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
-            ) {
-                Icon(androidx.compose.material.icons.Icons.Outlined.Clear, contentDescription = null)
-                Text("Limpar")
-            }
-        }
-    }
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStroke(points: List<androidx.compose.ui.geometry.Offset>) {
-    if (points.size < 2) return
-    val path = Path().apply {
-        moveTo(points.first().x, points.first().y)
-        points.drop(1).forEach { lineTo(it.x, it.y) }
-    }
-    drawPath(path = path, color = Color(0xFF111827), style = Stroke(width = 3.2f))
-}
 
 @Composable
 private fun Field(

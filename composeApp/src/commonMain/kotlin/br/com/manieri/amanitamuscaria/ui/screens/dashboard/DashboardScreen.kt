@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -268,111 +269,160 @@ private fun ServiceDetailsPane(
         return
     }
 
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-    ) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val isCompactPane = maxWidth < 920.dp
+        val isNarrowPane = maxWidth < 760.dp
+        val contentPadding = if (isCompactPane) 16.dp else 24.dp
+        val sectionSpacing = if (isCompactPane) 10.dp else 14.dp
+        val headerSpacing = if (isCompactPane) 6.dp else 8.dp
+        val actionsSpacing = if (isCompactPane) 8.dp else 10.dp
+        val generateReport: () -> Unit = {
+            val result = onGenerateReport(service)
+            reportFeedback = if (result.success) {
+                "${result.message} (${result.filePath ?: "-"})"
+            } else {
+                result.message
+            }
+        }
+
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 980.dp)
-                .align(Alignment.CenterHorizontally),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(contentPadding),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = if (isCompactPane) 820.dp else 980.dp)
+                    .align(Alignment.CenterHorizontally),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = service.plate,
-                        style = MaterialTheme.typography.displayLarge,
-                        color = tokens.textPrimary,
-                    )
-                    StatusBadge(service.status, large = true)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (service.status != ServiceStatus.COMPLETED) {
-                        Button(
-                            onClick = onCheckout,
-                            colors = ButtonDefaults.buttonColors(containerColor = tokens.statusGreen),
-                        ) {
-                            Icon(Icons.Outlined.Done, contentDescription = null)
-                            Text("Fazer Check-out")
+                if (isNarrowPane) {
+                    Column(verticalArrangement = Arrangement.spacedBy(actionsSpacing)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(headerSpacing)) {
+                            Text(
+                                text = service.plate,
+                                style = MaterialTheme.typography.displayLarge,
+                                color = tokens.textPrimary,
+                            )
+                            StatusBadge(service.status, large = true)
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(actionsSpacing)) {
+                            if (service.status != ServiceStatus.COMPLETED) {
+                                Button(
+                                    onClick = onCheckout,
+                                    colors = ButtonDefaults.buttonColors(containerColor = tokens.statusGreen),
+                                ) {
+                                    Icon(Icons.Outlined.Done, contentDescription = null)
+                                    Text("Fazer Check-out")
+                                }
+                            }
+                            Button(
+                                onClick = generateReport,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
+                            ) {
+                                Icon(Icons.Outlined.FileDownload, contentDescription = null)
+                                Text("Gerar Relatorio")
+                            }
+                            Button(
+                                onClick = { },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
+                                modifier = Modifier.width(52.dp),
+                            ) {
+                                Icon(Icons.Outlined.Edit, contentDescription = null)
+                            }
                         }
                     }
-                    Button(
-                        onClick = {
-                            val result = onGenerateReport(service)
-                            reportFeedback = if (result.success) {
-                                "${result.message} (${result.filePath ?: "-"})"
-                            } else {
-                                result.message
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(headerSpacing)) {
+                            Text(
+                                text = service.plate,
+                                style = MaterialTheme.typography.displayLarge,
+                                color = tokens.textPrimary,
+                            )
+                            StatusBadge(service.status, large = true)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(actionsSpacing)) {
+                            if (service.status != ServiceStatus.COMPLETED) {
+                                Button(
+                                    onClick = onCheckout,
+                                    colors = ButtonDefaults.buttonColors(containerColor = tokens.statusGreen),
+                                ) {
+                                    Icon(Icons.Outlined.Done, contentDescription = null)
+                                    Text("Fazer Check-out")
+                                }
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
-                    ) {
-                        Icon(Icons.Outlined.FileDownload, contentDescription = null)
-                        Text("Gerar Relatorio")
-                    }
-                    Button(
-                        onClick = { },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
-                        modifier = Modifier.width(52.dp),
-                    ) {
-                        Icon(Icons.Outlined.Edit, contentDescription = null)
+                            Button(
+                                onClick = generateReport,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
+                            ) {
+                                Icon(Icons.Outlined.FileDownload, contentDescription = null)
+                                Text("Gerar Relatorio")
+                            }
+                            Button(
+                                onClick = { },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = tokens.textPrimary),
+                                modifier = Modifier.width(52.dp),
+                            ) {
+                                Icon(Icons.Outlined.Edit, contentDescription = null)
+                            }
+                        }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(18.dp))
-            reportFeedback?.let { feedback ->
-                Text(
-                    text = feedback,
-                    color = if (feedback.startsWith("PDF gerado")) Color(0xFF166534) else Color(0xFFB91C1C),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(Modifier.height(12.dp))
-            }
-            DetailCard(
-                title = "Dados do Veiculo",
-                icon = { Icon(Icons.Outlined.DirectionsCar, contentDescription = null, tint = tokens.sidebarAccent) },
-            ) {
-                DetailGridRow("Marca", service.vehicle.brand, "Modelo", service.vehicle.model, "Ano", service.vehicle.year.toString())
-                Spacer(Modifier.height(12.dp))
-                DetailGridRow("Cor", service.vehicle.color, "Quilometragem", "${service.vehicle.mileage} km", "Placa", service.vehicle.plate)
-            }
+                Spacer(Modifier.height(if (isCompactPane) 12.dp else 18.dp))
+                reportFeedback?.let { feedback ->
+                    Text(
+                        text = feedback,
+                        color = if (feedback.startsWith("PDF gerado")) Color(0xFF166534) else Color(0xFFB91C1C),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(Modifier.height(if (isCompactPane) 10.dp else 12.dp))
+                }
+                DetailCard(
+                    title = "Dados do Veiculo",
+                    icon = { Icon(Icons.Outlined.DirectionsCar, contentDescription = null, tint = tokens.sidebarAccent) },
+                ) {
+                    DetailGridRow("Marca", service.vehicle.brand, "Modelo", service.vehicle.model, "Ano", service.vehicle.year.toString())
+                    Spacer(Modifier.height(12.dp))
+                    DetailGridRow("Cor", service.vehicle.color, "Quilometragem", "${service.vehicle.mileage} km", "Placa", service.vehicle.plate)
+                }
 
-            Spacer(Modifier.height(14.dp))
-            DetailCard(
-                title = "Dados do Cliente",
-                icon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = tokens.sidebarAccent) },
-            ) {
-                DetailGridRow("Nome", service.client.name, "Telefone", service.client.phone, "Email", service.client.email ?: "-")
-            }
+                Spacer(Modifier.height(sectionSpacing))
+                DetailCard(
+                    title = "Dados do Cliente",
+                    icon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = tokens.sidebarAccent) },
+                ) {
+                    DetailGridRow("Nome", service.client.name, "Telefone", service.client.phone, "Email", service.client.email ?: "-")
+                }
 
-            Spacer(Modifier.height(14.dp))
-            DetailCard(
-                title = "Informacoes do Atendimento",
-                icon = { Icon(Icons.Outlined.Description, contentDescription = null, tint = tokens.sidebarAccent) },
-            ) {
-                Text("Entrada: ${service.entryDateLabel}", color = tokens.textSecondary)
-                service.exitDateLabel?.let {
+                Spacer(Modifier.height(sectionSpacing))
+                DetailCard(
+                    title = "Informacoes do Atendimento",
+                    icon = { Icon(Icons.Outlined.Description, contentDescription = null, tint = tokens.sidebarAccent) },
+                ) {
+                    Text("Entrada: ${service.entryDateLabel}", color = tokens.textSecondary)
+                    service.exitDateLabel?.let {
+                        Spacer(Modifier.height(6.dp))
+                        Text("Saida: $it", color = tokens.textSecondary)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text("Observacoes", style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(6.dp))
-                    Text("Saida: $it", color = tokens.textSecondary)
+                    Text(
+                        text = service.observations.ifBlank { "Nenhuma observacao registrada." },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFF9FAFB), RoundedCornerShape(10.dp))
+                            .padding(14.dp),
+                        color = tokens.textPrimary,
+                    )
                 }
-                Spacer(Modifier.height(12.dp))
-                Text("Observacoes", style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = service.observations.ifBlank { "Nenhuma observacao registrada." },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFFF9FAFB), RoundedCornerShape(10.dp))
-                        .padding(14.dp),
-                    color = tokens.textPrimary,
-                )
             }
         }
     }

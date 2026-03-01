@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -40,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.ContentScale
 import org.jetbrains.compose.resources.painterResource
@@ -109,6 +112,7 @@ fun CheckinWizardScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .background(MaterialTheme.colorScheme.surface),
     ) {
         Row(
@@ -150,19 +154,38 @@ fun CheckinWizardScreen(
                             Field("Modelo", model, Modifier.weight(1f)) { model = it }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Field("Ano", year, Modifier.weight(1f)) { year = it }
+                            Field(
+                                label = "Ano",
+                                value = year,
+                                modifier = Modifier.weight(1f),
+                                keyboardType = KeyboardType.Number,
+                            ) { year = it.filter(Char::isDigit).take(4) }
                             Field("Cor", color, Modifier.weight(1f)) { color = it }
-                            Field("Quilometragem", mileage, Modifier.weight(1f)) { mileage = it }
+                            Field(
+                                label = "Quilometragem",
+                                value = mileage,
+                                modifier = Modifier.weight(1f),
+                                keyboardType = KeyboardType.Number,
+                            ) { mileage = it.filter(Char::isDigit).take(7) }
                         }
                     }
 
                     2 -> {
                         Field("Nome completo", clientName) { clientName = it }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Field("Telefone", phone, Modifier.weight(1f)) { phone = it }
+                            Field(
+                                label = "Telefone",
+                                value = phone,
+                                modifier = Modifier.weight(1f),
+                                keyboardType = KeyboardType.Phone,
+                            ) { phone = formatBrazilPhone(it) }
                             Field("Documento", document, Modifier.weight(1f)) { document = it }
                         }
-                        Field("Email", email) { email = it }
+                        Field(
+                            label = "Email",
+                            value = email,
+                            keyboardType = KeyboardType.Email,
+                        ) { email = it }
                     }
 
                     3 -> {
@@ -467,6 +490,7 @@ private fun Field(
     label: String,
     value: String,
     modifier: Modifier = Modifier.fillMaxWidth(),
+    keyboardType: KeyboardType = KeyboardType.Text,
     onValueChange: (String) -> Unit,
 ) {
     OutlinedTextField(
@@ -476,5 +500,18 @@ private fun Field(
         label = { Text(label) },
         shape = RoundedCornerShape(10.dp),
         singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
     )
+}
+
+private fun formatBrazilPhone(raw: String): String {
+    val digits = raw.filter(Char::isDigit).take(11)
+    if (digits.isEmpty()) return ""
+
+    return when {
+        digits.length <= 2 -> "(${digits}"
+        digits.length <= 6 -> "(${digits.take(2)}) ${digits.drop(2)}"
+        digits.length <= 10 -> "(${digits.take(2)}) ${digits.drop(2).take(4)}-${digits.drop(6)}"
+        else -> "(${digits.take(2)}) ${digits.drop(2).take(5)}-${digits.drop(7)}"
+    }
 }
